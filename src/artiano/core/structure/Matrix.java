@@ -170,7 +170,7 @@ public class Matrix implements Serializable{
 	 * @return
 	 */
 	public boolean isVector(){
-		return (rows!= 1&&cols!=1);
+		return (rows == 1 || cols == 1);
 	}
 	
 	/**
@@ -607,7 +607,7 @@ public class Matrix implements Serializable{
 	 * 矩阵减法 (z=x-y)
 	 * <br><b><i>NOTICE:</i></b> 方法将用结果替换原始矩阵。如果想保留原始矩阵，使用如下代码：
 	 * <pre><code>
-	 * Matrix z=x.minus(y);
+	 * Matrix z=x.minus(y, true);
 	 * </code>
 	 * </pre>
 	 * @param x 

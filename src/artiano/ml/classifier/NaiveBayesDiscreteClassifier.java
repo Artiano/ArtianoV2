@@ -14,7 +14,8 @@ import artiano.core.structure.Matrix;
  * @author BreezeDust
  * 
  */
-public class NaiveBayesDiscreteClassifier extends Preservable{
+public class NaiveBayesDiscreteClassifier extends Preservable{	
+	private static final long serialVersionUID = -4699346650739429790L;
 	public String[] domainStr;
 	public Map<Integer, Matrix> labelMap = new LinkedHashMap<Integer, Matrix>();
 	public List<Integer> labeList = new LinkedList<Integer>();

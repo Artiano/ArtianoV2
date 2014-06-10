@@ -21,7 +21,7 @@ import artiano.ml.regression.Regression;
  * @author (latest modification by Nano.Michael)
  * @since 1.0.0
  */
-public class Test {
+public class LinearRegressionTest {
 	
 	final static double[] x =  { 2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0};
 	final static double[] y = {56.27,41.32,31.45,30.05,24.69,19.78,20.94,16.73,14.21,12.44};

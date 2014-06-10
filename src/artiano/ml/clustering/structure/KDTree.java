@@ -5,6 +5,7 @@ import java.util.*;
 import artiano.core.structure.Matrix;
 import artiano.core.structure.Range;
 import artiano.ml.BaseKDTree;
+import artiano.statistics.distance.EuclideanDistance;
 
 /**
  * <p>Description: KD Tree for KMeans.</p>
@@ -91,8 +92,10 @@ public class KDTree extends BaseKDTree {
 		BaseKDTree.BaseKDNode current = root;		
 		int featureIndex = current.featureIndex;
 		
+		//欧氏距离计算类
+		EuclideanDistance eucDis = new EuclideanDistance();
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		Stack<BaseKDTree.BaseKDNode> searchPath = new Stack();		
+		Stack<BaseKDTree.BaseKDNode> searchPath = new Stack();				
 		while(current != null) {										
 			searchPath.push(current);	//将找到的节点放入栈中			
 							
@@ -105,14 +108,14 @@ public class KDTree extends BaseKDTree {
 			}
 		}
 		BaseKDTree.BaseKDNode nearestNode = searchPath.peek();	//节点数据
-		double max_dist = distance(nearestNode.nodeData, target);
+		double max_dist = eucDis.calculate(nearestNode.nodeData, target);
 		double min_dist = max_dist;		
 		
 		/* 2. trace search */
 		BaseKDTree.BaseKDNode kd_point = null;		
 		while(! searchPath.empty()) {
 			BaseKDTree.BaseKDNode back_point = searchPath.pop();			
-			double distance2 = distance(back_point.nodeData, target);
+			double distance2 = eucDis.calculate(back_point.nodeData, target); 
 			if(min_dist > distance2) {
 				min_dist = distance2;
 				nearestNode = back_point;				
@@ -121,8 +124,8 @@ public class KDTree extends BaseKDTree {
 			featureIndex = back_point.featureIndex;  //作为数据分类的属性
 			
 			double dist1 = 
-				distance(target.column(featureIndex), 
-					back_point.nodeData.column(featureIndex));
+				eucDis.calculate(target.column(featureIndex), 
+						back_point.nodeData.column(featureIndex));	
 			if(dist1 < max_dist) {  //Get next sub space
 				if(target.at(featureIndex) <= back_point.partitionValue) {
 					kd_point = back_point.right;
@@ -139,7 +142,8 @@ public class KDTree extends BaseKDTree {
 				continue;
 			}
 			
-			double dist3 = distance(kd_point.nodeData, target);
+			double dist3 = 
+				eucDis.calculate(kd_point.nodeData, target);
 			if(dist3 < min_dist) {
 				nearestNode = kd_point;
 				min_dist = dist3;

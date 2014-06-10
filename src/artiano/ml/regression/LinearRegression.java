@@ -37,33 +37,18 @@ public class LinearRegression extends Regression {
     	return decomposition.solve(b);
 	}
 	
-	private static Matrix generateRightHandSide(Matrix right_hand, Matrix coefficients) {
-		int rows = coefficients.rows();
+	private static Matrix generateRightHandSide(Matrix right_hand, 
+			Matrix coefficients) {
 		int cols = coefficients.columns() - 1;
 		Matrix b = new Matrix(cols + 1, 1);
-    	for(int i=0; i<cols+1; i++) {
-    		double sumY = 0;
-    		for(int n=0; n<rows; n++) {
-				sumY += right_hand.at(n, 0) * coefficients.at(n, i);    				
-			}
-			b.set(i, 0, sumY);
-    	}
+		b = coefficients.t().multiply(right_hand);
 		return b;
 	}
 
 	private static Matrix genearteLeftHandSide(Matrix coefficients) {
-		int rows = coefficients.rows();
-		int cols = coefficients.columns() - 1;
-		Matrix a = new Matrix(cols + 1, cols + 1);
-    	for(int i=0; i<a.rows(); i++) {
-    		for(int j=0; j<a.columns(); j++) {
-    			double sumX = 0;
-    			for(int n=0; n<rows; n++) {
-    				sumX += coefficients.at(n, j) * coefficients.at(n, i);    				
-    			}
-    			a.set(i, j, sumX);    			    		
-    		}    		    		
-    	}
+		int size = coefficients.columns();
+		Matrix a = new Matrix(size, size);
+		a = coefficients.t().multiply(coefficients);
 		return a;
 	}
 

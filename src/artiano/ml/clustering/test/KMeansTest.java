@@ -6,7 +6,7 @@ import java.util.Set;
 import artiano.core.structure.Matrix;
 import artiano.ml.clustering.KMeans;
 
-public class Test {
+public class KMeansTest {
 	
 	//Training data(The first column is class label)
 	static double[] inputArr = { 											

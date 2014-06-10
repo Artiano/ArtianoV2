@@ -40,7 +40,6 @@ public class NaiveBayesClassifier extends Classifier {
 		} catch (Exception e) {
 			return false; 	// 训练数据不合法，训练失败，退出 
 		}
-		//this.trainData = trainSet.toMatrix();
 		//获取训练集去掉类标那一列之后的数据
 		this.trainData = generateTrainDataWithoutLabel(trainSet);
 		classAttribute = trainSet.classAttribute();
@@ -93,13 +92,7 @@ public class NaiveBayesClassifier extends Classifier {
 	 * @return 带预测数据的分类
 	 * @throws Exception
 	 */
-	private Object classifySingleData(Matrix sample) {
-		if (sample.rows() > 1) {
-			throw new IllegalArgumentException(
-				"The test sample matrix can only be one row. For"
-				+ " multiple rows, please use method predict(Matrix sample, Matrix result)");
-		}
-
+	private Object classifySingleData(Matrix sample) {		
 		/* 通过数据属于某个类标号的可能性大小来将该数据归到该类 */
 		List<Object> labelList = 
 			new ArrayList<Object>(eachlabelCount.keySet());						
@@ -120,9 +113,8 @@ public class NaiveBayesClassifier extends Classifier {
 	private List<Double> computeEachLabelProbabilityOfData(Matrix sample,
 			List<Object> labelList) {
 		List<Double> probabilityList = new ArrayList<Double>();		
-		System.out.println("label size: " + labelList.size() + ", columns: " + sample.columns());
 		for (int j = 0; j < labelList.size(); j++) {
-			double probabilitiy = 1;
+			double probabilitiy = 0;
 			for (int k = 0; k < sample.columns(); k++) {				
 				double aver = 
 					(double) trainResult.at(j * sample.columns() + k , 0); 
@@ -131,12 +123,13 @@ public class NaiveBayesClassifier extends Classifier {
 				double a = (1.0 / (Math.sqrt(Math.PI * 2) * stdDeviation));
 				double b = Math.pow((sample.at(0, k) - aver), 2);
 				double c = 2 * Math.pow(stdDeviation, 2);
-				probabilitiy *= (a * Math.pow(Math.E, -1 * b / c)); 
+				//取对数避免太多的小数相乘造成下溢
+				probabilitiy += Math.log((a * Math.pow(Math.E, -1 * b / c))); 
 			}
 			// 计算数据属于该类的可能性大小
 			double labelAppearProba = 
 				eachlabelCount.get(labelList.get(j)) * 1.0 / trainData.rows(); 
-			probabilitiy *= labelAppearProba;			
+			probabilitiy += Math.log(labelAppearProba);			
 			probabilityList.add(probabilitiy);  // 该条数据属于第j类的可能性大小 
 		}
 		return probabilityList;

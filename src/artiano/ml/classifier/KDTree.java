@@ -5,6 +5,7 @@ import java.util.*;
 import artiano.core.structure.*;
 import artiano.core.structure.Table.TableRow;
 import artiano.ml.BaseKDTree;
+import artiano.statistics.distance.EuclideanDistance;
 
 /**
  * <p>Description: KD Tree for KNN.</p>
@@ -60,115 +61,6 @@ public class KDTree extends BaseKDTree {
 		return root;
 	}
 	
-	/**  
-	 * 删除指定的节点
-	 * @param node - 将要删除的节点
-	 * @return 删除成功与否。成功，则返回true;否则，返回false 
-	 */
-	@Override
-	public boolean delete(BaseKDNode nodeToDelete) {
-		//将要删除的节点是树中唯一的一个节点
-		if(root.treeData.rows() == 1) {	  
-			root = null;
-			return true;
-		}
-		
-		Matrix newTreeData = 
-				new Matrix(root.treeData.rows() - 1, root.treeData.columns());
-		NominalAttribute newTreeLabel = new NominalAttribute("label");
-		
-		//广度优先遍历来获取newTreeData和newTreeLabel
-		int count = 0;
-		Queue<KDNode> nodeQueue = new LinkedList<KDNode>();
-		nodeQueue.add(((KDNode)root));
-		while(!nodeQueue.isEmpty()) {
-			KDNode node = nodeQueue.poll();
-			if(node != nodeToDelete) {    //不是要删除的节点
-				newTreeData.setRow(count, node.nodeData);				
-				newTreeLabel.push(node.nodeLabel);
-				count++;
-			}						
-			
-			if(node.left != null) {
-				nodeQueue.add((KDNode) node.left);
-			}			
-			if(node.right != null) {
-				nodeQueue.add((KDNode) node.right);
-			}
-		}
-		
-		if(count == root.treeData.rows()) {  //没有找到要删除的节点
-			return false;
-		} else {
-			root = buildKDTree(newTreeData, newTreeLabel);			
-			return true;
-		}				
-	}		
-	
-	/**
-	 * 找到与指定数据最接近的节点
-	 * @param root 根节点
-	 * @param target 将要寻找最近邻居的手
-	 * @return 最近邻居
-	 */
-	public KDNode findNearest(KDNode root, Matrix target) {
-		/* 1. 二分查找来获取查找路径 */
-		KDNode current = root;		
-		int featureIndex = current.featureIndex;		
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		Stack<KDNode> searchPath = new Stack();		
-		while(current != null) {										
-			searchPath.push(current);	//将找到的节点放入栈中					
-			featureIndex = current.featureIndex;  //获取下一次分裂的维下标			
-			//二分查找
-			if(target.at(featureIndex) <= current.partitionValue) {
-				current = (KDNode) current.left;
-			} else {
-				current = (KDNode) current.right;
-			}
-		}
-		KDNode nearestNode = searchPath.peek();	//节点数据
-		double max_dist = distance(nearestNode.nodeData, target);
-		double min_dist = max_dist;		
-		
-		/* 2. trace search */
-		KDNode kd_point = null;		
-		while(! searchPath.empty()) {
-			KDNode back_point = searchPath.pop();			
-			double distance2 = distance(back_point.nodeData, target);
-			if(min_dist > distance2) {
-				min_dist = distance2;
-				nearestNode = back_point;				
-			}			
-			featureIndex = back_point.featureIndex;  //作为数据分类的属性			
-			double dist1 = 
-				distance(target.column(featureIndex), 
-					back_point.nodeData.column(featureIndex));
-			if(dist1 < max_dist) {  //Get next sub space
-				if(target.at(featureIndex) <= back_point.partitionValue) {
-					kd_point = (KDNode) back_point.right;
-				} else {
-					kd_point = (KDNode) back_point.left;
-				}
-				
-				if(kd_point != null) {
-					searchPath.push(kd_point);
-				}				
-			}
-			
-			if(kd_point == null) {  //Trace complete
-				continue;
-			}
-			
-			double dist3 = distance(kd_point.nodeData, target);
-			if(dist3 < min_dist) {
-				nearestNode = kd_point;
-				min_dist = dist3;
-			}
-		}
-		return nearestNode;
-	}
-	
 	/**
 	 * 构造子树
 	 * @param kdNode - 子树的根节点
@@ -188,7 +80,7 @@ public class KDTree extends BaseKDTree {
 		}
 	}
 	
-	//将当前数据划分为左右两颗子树
+	//将当前数据划分为左右两棵子树
 	private void partition_features(KDNode kdNode) {
 		if(kdNode.treeData == null) {   //Leaf node
 			return;
@@ -262,7 +154,8 @@ public class KDTree extends BaseKDTree {
 		List<Matrix> dataList = new ArrayList<Matrix>();
 		List<Object> labelList =  new ArrayList<Object>();
 		for(int i=0; i<dataSet.rows(); i++) {
-			dataList.add(dataSet.at(new Range(i,i+1), new Range(0, dataSet.columns())));
+			dataList.add(dataSet.at(new Range(i,i+1), 
+					new Range(0, dataSet.columns())));
 			labelList.add(dataLabel.get(i));
 		}
 				
@@ -326,13 +219,126 @@ public class KDTree extends BaseKDTree {
 						
 		//依次寻找1,2,...., k近邻
 		for(int i=0; i<k; i++) {
-			KDNode nearestNode = tree.findNearest(((KDNode)tree.root), target);		
+			KDNode nearestNode = 
+					tree.findNearest(((KDNode)tree.root), target);		
 			nearestNode.nodeData.print();
 			kNearest.add(nearestNode);
 			tree.delete(nearestNode);
 		}						
 		return kNearest;
 	}	
+	
+	/**  
+	 * 删除指定的节点
+	 * @param node - 将要删除的节点
+	 * @return 删除成功与否。成功，则返回true;否则，返回false 
+	 */
+	@Override
+	public boolean delete(BaseKDNode nodeToDelete) {
+		//将要删除的节点是树中唯一的一个节点
+		if(root.treeData.rows() == 1) {	  
+			root = null;
+			return true;
+		}
+		
+		Matrix newTreeData = 
+				new Matrix(root.treeData.rows() - 1, root.treeData.columns());
+		NominalAttribute newTreeLabel = new NominalAttribute("label");
+		
+		//广度优先遍历来获取newTreeData和newTreeLabel
+		int count = 0;
+		Queue<KDNode> nodeQueue = new LinkedList<KDNode>();
+		nodeQueue.add(((KDNode)root));
+		while(!nodeQueue.isEmpty()) {
+			KDNode node = nodeQueue.poll();
+			if(node != nodeToDelete) {    //不是要删除的节点
+				newTreeData.setRow(count, node.nodeData);				
+				newTreeLabel.push(node.nodeLabel);
+				count++;
+			}						
+			
+			if(node.left != null) {
+				nodeQueue.add((KDNode) node.left);
+			}			
+			if(node.right != null) {
+				nodeQueue.add((KDNode) node.right);
+			}
+		}
+		
+		if(count == root.treeData.rows()) {  //没有找到要删除的节点
+			return false;
+		} else {
+			root = buildKDTree(newTreeData, newTreeLabel);			
+			return true;
+		}				
+	}		
+	
+	/**
+	 * 找到与指定数据最接近的节点
+	 * @param root 根节点
+	 * @param target 将要寻找最近邻居的手
+	 * @return 最近邻居
+	 */
+	public KDNode findNearest(KDNode root, Matrix target) {
+		/* 1. 二分查找来获取查找路径 */
+		KDNode current = root;		
+		int featureIndex = current.featureIndex;		
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Stack<KDNode> searchPath = new Stack();		
+		while(current != null) {										
+			searchPath.push(current);	//将找到的节点放入栈中					
+			featureIndex = current.featureIndex;  //获取下一次分裂的维下标			
+			//二分查找
+			if(target.at(featureIndex) <= current.partitionValue) {
+				current = (KDNode) current.left;
+			} else {
+				current = (KDNode) current.right;
+			}
+		}
+		
+		//欧氏距离计算类
+		EuclideanDistance eucDis = new EuclideanDistance();
+		KDNode nearestNode = searchPath.peek();	//节点数据		
+		double max_dist = eucDis.calculate(nearestNode.nodeData, target); 
+		double min_dist = max_dist;		
+		
+		/* 2. trace search */
+		KDNode kd_point = null;		
+		while(! searchPath.empty()) {
+			KDNode back_point = searchPath.pop();			
+			double distance2 = eucDis.calculate(back_point.nodeData, target); 
+			if(min_dist > distance2) {
+				min_dist = distance2;
+				nearestNode = back_point;				
+			}			
+			featureIndex = back_point.featureIndex;  //作为数据分类的属性			
+			double dist1 = 
+				eucDis.calculate(target.column(featureIndex), 
+						back_point.nodeData.column(featureIndex)); 
+			if(dist1 < max_dist) {  //Get next sub space
+				if(target.at(featureIndex) <= back_point.partitionValue) {
+					kd_point = (KDNode) back_point.right;
+				} else {
+					kd_point = (KDNode) back_point.left;
+				}
+				
+				if(kd_point != null) {
+					searchPath.push(kd_point);
+				}				
+			}
+			
+			if(kd_point == null) {  //Trace complete
+				continue;
+			}
+			
+			double dist3 = eucDis.calculate(kd_point.nodeData, target); 
+			if(dist3 < min_dist) {
+				nearestNode = kd_point;
+				min_dist = dist3;
+			}
+		}
+		return nearestNode;
+	}
 	
 	//KD-Tree节点	
 	public static class KDNode extends BaseKDNode {		

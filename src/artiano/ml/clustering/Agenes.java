@@ -16,15 +16,15 @@ public class Agenes {
 		// 判断输入的数据是否合法
 		isDataValid(dataPoints, clusterNumber);
 
-		List<Cluster> finalClusters = new ArrayList<Cluster>();
 		// 初始情况下，每个数据点都作为一个簇
-		finalClusters = initializeClsters(dataPoints);
+		List<Cluster> finalClusters = initializeClusters(dataPoints);
 		/*
 		 * 合并簇间距离最近的两个簇，知道簇的数目等于clusterNumber 类间相似性用MIN来描述
 		 */
 		while (finalClusters.size() > clusterNumber) {
 			//获取当前距离最近的两个簇在簇列表中的下标
-			List<Integer> closestClusterIndices = getCurrentTwoClosestClusters(finalClusters);
+			List<Integer> closestClusterIndices = 
+					getCurrentTwoClosestClusters(finalClusters);
 			//合并这两个簇
 			mergeTwoClusters(finalClusters, closestClusterIndices);			
 		}
@@ -46,7 +46,7 @@ public class Agenes {
 	}
 
 	// 初始情况下，每个数据点都作为一个簇
-	private static List<Cluster> initializeClsters(Matrix dataPoints) {
+	private static List<Cluster> initializeClusters(Matrix dataPoints) {
 		List<Cluster> initialClusters = new ArrayList<Cluster>();
 		int rows = dataPoints.rows();
 		for (int i = 0; i < rows; i++) {

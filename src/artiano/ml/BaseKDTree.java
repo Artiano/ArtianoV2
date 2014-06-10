@@ -87,26 +87,6 @@ public abstract class BaseKDTree {
 		return maxIndex;
 	}
 
-	/**
-	 * 计算两个数据点之间的欧式距离
-	 * @param point1 - 数据点
-	 * @param point2 - 数据点
-	 * @return 两个数据点之间的欧式距离
-	 */
-	protected double distance(Matrix point1, Matrix point2) {
-		if(point1.columns() != point2.columns() || 
-				point1.rows() != 1 || point2.rows() != 1) {
-			throw new IllegalArgumentException(
-				"两个数据点列的维数应该一致且行数为1!");
-		}
-		
-		double distance = 0;
-		for(int i=0; i<point1.columns(); i++) {
-			distance += Math.pow(point1.at(i) - point2.at(i), 2);
-		}
-		return Math.sqrt(distance);
-	}
-
 	/**  
 	 * 删除指定节点
 	 * @param node 将要删除的节点 
